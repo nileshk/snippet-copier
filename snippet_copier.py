@@ -1,7 +1,76 @@
 #!/usr/bin/env python
+r"""
+=================
+snippet_copier.py
+=================
 
-import getopt
+A script which downloads snippets from bundles in the `TextMate`_ `svn repo`_
+and attempts to create duplicate `YASnippets`_, written by `Jeff Wheeler`_.
+
+Synopsis
+========
+
+TextMate bundles include amazingly wonderful tab-triggered snippets, yet these
+have been for a long time restricted to only OS X. Emacs, a cross-platform
+editor now has a great snippets package, YASnippet, so now it seems necessary
+to make the TextMate snippets available for Emacs. This script does just that.
+
+This script may be used as a command-line utility or integrated into other
+scripts without problems.
+
+Description
+===========
+
+The snippet copier works with two classes:
+
+- ``Snippet`` which represents a generic tab-triggered snippet
+- ``TextMateBundle``, an abstract API tied to TextMate's bundles SVN repo
+
+With access to the snippets in the bundle, generic ``Snippet``\ s are created
+which then are saved in a local directory.
+
+It's important to remember that not all snippets can be converted directly from
+TextMate to YASnippet: they use different syntax for certain things like
+embedded code. YASnippet requires lisp, while TextMate uses shell commands
+inside snippets. A few other conversions don't work quite right, so it is
+likely that some snippets will require manual editing.
+
+Options
+=======
+
+Most often, snippets will be copied through the command-line interface. The
+script accepts just a few simple arguments:
+
+``--bundle``
+        The case-sensitive name of the bundle on the TextMate SVN repository.
+
+``--path``
+        The path of the directory to which the snippets should be saved. This
+        may be either a relative or absolute path.
+
+``--help``
+        Print brief usage information regarding the command-line interface.
+
+Credits
+=======
+
+This script was written by `Jeff Wheeler`_, except for the ``unescape``
+function which was found on `this site <http://effbot.org/zone/re-sub.htm>`_.
+
+The TextMate bundles were written by many different people, often available in
+the *info.plist* file (with the key ``contactName``).
+
+The YASnippet package was written by Chiyuan Zhang (a.k.a. *pluskid*) for
+Emacs.
+
+.. _TextMate: http://macromates.com
+.. _svn repo: http://macromates.com/svn/Bundles/trunk/Bundles/
+.. _YASnippets: http://code.google.com/p/yasnippet/
+.. _Jeff Wheeler: http://nokrev.com
+"""
+
 import htmlentitydefs
+import optparse
 import os
 import re
 import sys
@@ -9,12 +78,14 @@ import urllib
 
 from BeautifulSoup import BeautifulSoup
 
-# This is a nice published snippet to unescape the HTML:
-# http://effbot.org/zone/re-sub.htm
-#
-# TextMate snippets have to be escaped because they're in XML. Yasnippets,
-# though, can not, so without this the literal escape text is inserted.
 def unescape(text):
+    """Replace HTML entities with original special characters.
+
+    The entities are used in TextMate bundles because they're XML documents;
+    placing characters like ``<`` and ``>`` would throw off a parser.
+
+    This snippet was found at http://effbot.org/zone/re-sub.htm; many thanks!
+    """
     def fixup(m):
         text = m.group(0)
         if text[:2] == "&#":
@@ -36,6 +107,7 @@ def unescape(text):
     return re.sub("&#?\w+;", fixup, text)
 
 class Snippet(object):
+    """A generic snippet that can be tab-triggered."""
     def __init__(self, trigger, content):
         self.trigger = trigger
         self.content = content
@@ -45,7 +117,7 @@ class Snippet(object):
 
     def save_as_yasnippet(self, path):
         # Find empty file name
-        filename = "%s/%s" % (path, self.trigger)
+        filename = "%s/%s" % (os.path.abspath(path), self.trigger)
 
         if os.path.exists(filename):
             i = 1
@@ -60,6 +132,7 @@ class Snippet(object):
         snippet_file.close()
 
 class TextMateBundle(object):
+    """Abstraction of TextMate's bundle svn repository."""
     URI_BASE = "http://macromates.com/svn/Bundles/trunk/Bundles" \
         "/%s.tmbundle/Snippets/"
 
@@ -100,31 +173,23 @@ class TextMateBundle(object):
             raise NotImplementedError
 
 if __name__ == '__main__':
-    def usage():
-        print "Download TextMate bundle snippets and save them in path as " \
-            "yasnippets."
+    p = optparse.OptionParser(description="Clone a TextMate bundle for "
+                              "YASnippet")
+    p.add_option("--bundle", "-b", help="Case-sensitive name of TextMate "
+                 "bundle")
+    p.add_option("--path", "-p", help="Path where snippets should be saved")
 
-    try:
-        opts, args = getopt.getopt(sys.argv[1:], "hb:p:",
-                                   ["help", "bundle=", "path="])
+    options, arguments = p.parse_args()
 
-        bundle, path = None, None
-        for opt, arg in opts:
-            if opt in ("-h", "--help"):
-                usage()
-                sys.exit()
-            elif opt in ("-b", "--bundle"):
-                bundle = arg
-            elif opt in ("-p", "--path"):
-                path = arg
+    # Validate everything is good
+    if not options.bundle:
+        p.error("bundle option not given")
 
-        if not bundle or not path:
-            usage()
-            sys.exit(2)
+    if not options.path:
+        p.error("path option not given")
+    elif not os.path.exists(options.path) or not os.path.isdir(options.path):
+        p.error("not a valid path")
 
-        bndl = TextMateBundle(bundle)
-        for snippet in bndl.download_snippets():
-            snippet.save_as_yasnippet(path)
-    except getopt.GetoptError:
-        usage()
-        sys.exit(2)
+    bndl = TextMateBundle(options.bundle)
+    for snippet in bndl.download_snippets():
+        snippet.save_as_yasnippet(options.path)
