@@ -137,7 +137,7 @@ class TextMateBundle(object):
         "/%s.tmbundle/Snippets/"
 
     def __init__(self, bundle):
-        self.bundle = bundle
+        self.bundle = bundle.replace(' ', '%20')
 
     def _create_soup(self, uri):
         sock = urllib.urlopen(uri)
