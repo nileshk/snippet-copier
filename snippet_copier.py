@@ -145,6 +145,12 @@ class TextMateBundle(object):
         sock.close()
         return soup
 
+    def _create_soup_from_file(self, filename):
+        snippet_file = open(filename)
+        soup = BeautifulSoup(snippet_file.read())
+        snippet_file.close()
+        return soup
+    
     def _snippet_uris(self):
         if not self.bundle_url:
             self.bundle_url = self.URI_BASE % self.bundle
@@ -156,7 +162,7 @@ class TextMateBundle(object):
         self.bundle = bundle.replace(' ', '%20')
 
     def set_bundle_url(self, bundle_url):
-        self.bundle_url = bundle_url + "Snippets/"
+        self.bundle_url = str(bundle_url) + "Snippets/"
         
     def download_snippets(self):
         snippets = []
@@ -167,9 +173,26 @@ class TextMateBundle(object):
                 pass
         return snippets
 
+    def load_snippets(self, folder):
+        snippets = []
+        snippet_folder = os.path.abspath(folder) + os.sep + "Snippets"
+        for filename in os.listdir(snippet_folder):
+            try:
+                snippets.append(self.create_snippet_from_file(
+                        snippet_folder + os.sep + filename))
+            except NotImplementedError:
+                pass
+        return snippets
+                    
     def create_snippet(self, uri):
         soup = self._create_soup(uri)
+        return self.process_soup(soup)
 
+    def create_snippet_from_file(self, filename):
+        soup = self._create_soup_from_file(filename)
+        return self.process_soup(soup)
+    
+    def process_soup(self, soup):
         try:
             return Snippet(
                 soup.find("key", text="tabTrigger").findNext("string").string,
@@ -187,23 +210,31 @@ if __name__ == '__main__':
                  "bundle")
     p.add_option("--path", "-p", help="Path where snippets should be saved")
     p.add_option("--url", "-u", help="Specific URL of a Textmate Bundle")
+    p.add_option("--folder", "-f", help="Specific folder path  where Textmate"
+                 "Bundle is located")
 
     options, arguments = p.parse_args()
 
     # Validate everything is good
-    if not options.bundle and not options.url:
-        p.error("bundle option or URL not given")
+    if not options.bundle and not options.url and not options.folder:
+        p.error("bundle option name, URL, or folder path not given")
 
     if not options.path:
         p.error("path option not given")
     elif not os.path.exists(options.path) or not os.path.isdir(options.path):
         p.error("not a valid path")
-
+    
+    if options.folder and not os.path.exists(options.folder):
+        p.error("Folder of bundle doesn't exist")
+        
     bndl = TextMateBundle()
     if options.bundle:
         bndl.set_bundle_name(options.bundle)
-    else:
+    elif options.url:
         bndl.set_bundle_url(options.url)
-
-    for snippet in bndl.download_snippets():
-        snippet.save_as_yasnippet(options.path)
+    if options.folder:
+        for snippet in bndl.load_snippets(options.folder):
+            snippet.save_as_yasnippet(options.path)            
+    else:
+        for snippet in bndl.download_snippets():
+            snippet.save_as_yasnippet(options.path)

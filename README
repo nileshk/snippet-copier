@@ -18,13 +18,9 @@ I have added the following new features:
   having having to specify the bundle name.  You can still do that, but now
   you can instead specify the URL of a Textmate bundle with the --url option.
 
-TODO
-====
-
-I plan to add these features:
-
-* Ability to use a downloaded Textmate bundle as the source
-
+* Ability to use a downloaded Textmate bundle as the source (using the
+  --folder option)
+  
 Example
 =======
 
@@ -37,3 +33,9 @@ snippet_copier.py \
 
 Note that currently the URL specified should have a trailing slash
 ("Bundle/" is appended to it).
+
+To use a downloaded bundle:
+
+snippet_copier.py \
+ --folder ~/Downloads/Oracle.tmbundle \
+ --path ~/Emacs/snippets/text-mode/plsql-mode
