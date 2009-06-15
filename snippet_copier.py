@@ -136,8 +136,8 @@ class TextMateBundle(object):
     URI_BASE = "http://macromates.com/svn/Bundles/trunk/Bundles" \
         "/%s.tmbundle/Snippets/"
 
-    def __init__(self, bundle):
-        self.bundle = bundle.replace(' ', '%20')
+    def __init__(self):
+        self.bundle_url = None
 
     def _create_soup(self, uri):
         sock = urllib.urlopen(uri)
@@ -146,10 +146,18 @@ class TextMateBundle(object):
         return soup
 
     def _snippet_uris(self):
-        soup = self._create_soup(self.URI_BASE % self.bundle)
-        return [self.URI_BASE % self.bundle +
+        if not self.bundle_url:
+            self.bundle_url = self.URI_BASE % self.bundle
+        soup = self._create_soup(self.bundle_url)
+        return [self.bundle_url +
                 a.a["href"] for a in soup.findAll('li')[1:]]
 
+    def set_bundle_name(self, bundle):
+        self.bundle = bundle.replace(' ', '%20')
+
+    def set_bundle_url(self, bundle_url):
+        self.bundle_url = bundle_url + "Snippets/"
+        
     def download_snippets(self):
         snippets = []
         for uri in self._snippet_uris():
@@ -178,18 +186,24 @@ if __name__ == '__main__':
     p.add_option("--bundle", "-b", help="Case-sensitive name of TextMate "
                  "bundle")
     p.add_option("--path", "-p", help="Path where snippets should be saved")
+    p.add_option("--url", "-u", help="Specific URL of a Textmate Bundle")
 
     options, arguments = p.parse_args()
 
     # Validate everything is good
-    if not options.bundle:
-        p.error("bundle option not given")
+    if not options.bundle and not options.url:
+        p.error("bundle option or URL not given")
 
     if not options.path:
         p.error("path option not given")
     elif not os.path.exists(options.path) or not os.path.isdir(options.path):
         p.error("not a valid path")
 
-    bndl = TextMateBundle(options.bundle)
+    bndl = TextMateBundle()
+    if options.bundle:
+        bndl.set_bundle_name(options.bundle)
+    else:
+        bndl.set_bundle_url(options.url)
+
     for snippet in bndl.download_snippets():
         snippet.save_as_yasnippet(options.path)
