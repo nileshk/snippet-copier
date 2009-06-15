@@ -1,0 +1,40 @@
+snippet-copier
+==============
+
+This is a fork of Jeff Wheeler's script to convert Textmate
+snippets to YASnippet snippets (for use in Emacs).  I cloned from
+his Git repo here:
+
+http://code.nokrev.com/?p=snippet-copier.git;a=summary
+git://code.nokrev.com:6002/snippet-copier.git
+
+Added Features
+==============
+
+I have added the following new features:
+
+* Ability to use an arbitrary SVN url as the source.  The script
+  originally only download from http://svn.textmate.org/trunk/Bundles/
+  though with the convenience of only having having to specify the
+  bundle name.  You can still do that, but now you can instead specify
+  the URL of a Textmate bundle with the --url option.
+
+TODO
+====
+
+I plan to add these features:
+
+* Ability to use a downloaded Textmate bundle as the source
+
+Example
+=======
+
+An example usage of specifying an SVN repository as the source (in this
+case an Oracle PL/SQL bundle used in plsql-mode):
+
+snippet_copier.py \
+ --url http://oracle-textmate-bundle.googlecode.com/svn/trunk/Oracle.tmbundle/ \
+ --path ~/Emacs/snippets/text-mode/plsql-mode
+
+Note that currently the URL specified should have a trailing slash
+("Bundle/" is appended to it).
