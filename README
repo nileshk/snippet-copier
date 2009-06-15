@@ -13,11 +13,10 @@ Added Features
 
 I have added the following new features:
 
-* Ability to use an arbitrary SVN url as the source.  The script
-  originally only download from http://svn.textmate.org/trunk/Bundles/
-  though with the convenience of only having having to specify the
-  bundle name.  You can still do that, but now you can instead specify
-  the URL of a Textmate bundle with the --url option.
+* Ability to use an arbitrary SVN url as the source.  The script originally
+  only download from MacroMates's SVN though with the convenience of only
+  having having to specify the bundle name.  You can still do that, but now
+  you can instead specify the URL of a Textmate bundle with the --url option.
 
 TODO
 ====
