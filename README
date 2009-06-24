@@ -1,5 +1,6 @@
-snippet-copier
-==============
+=================
+snippet-copier.py
+=================
 
 This is a fork of Jeff Wheeler's script to convert Textmate
 snippets to YASnippet snippets (for use in Emacs).  I cloned from
@@ -39,3 +40,10 @@ To use a downloaded bundle:
 snippet_copier.py \
  --folder ~/Downloads/Oracle.tmbundle \
  --path ~/Emacs/snippets/text-mode/plsql-mode
+
+=======================
+eclipse_to_yasnippet.py
+=======================
+
+This is a script that converts exported Eclispe templates to YASnippet
+format.  It is currently a work in progress, but does work to some degree.
